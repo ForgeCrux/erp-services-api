@@ -1,0 +1,210 @@
+{
+  "info" : {
+    "_postman_id" : "c256d8fd-71ec-481b-b624-2df6f344a56d",
+    "name" : "ERP Services API",
+    "description" : "Generated Postman collection for erp-services-api",
+    "schema" : "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth" : {
+    "type" : "bearer",
+    "bearer" : [ {
+      "key" : "token",
+      "value" : "{{bearerToken}}",
+      "type" : "string"
+    } ]
+  },
+  "variable" : [ {
+    "key" : "baseUrl",
+    "value" : "http://localhost:8080",
+    "type" : "string"
+  }, {
+    "key" : "bearerToken",
+    "value" : "",
+    "type" : "string"
+  }, {
+    "key" : "resourceId",
+    "value" : "sample-id",
+    "type" : "string"
+  } ],
+  "item" : [ {
+    "name" : "Health",
+    "item" : [ {
+      "name" : "Liveness",
+      "request" : {
+        "auth" : {
+          "type" : "noauth"
+        },
+        "method" : "GET",
+        "header" : [ {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/actuator/health/liveness",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "actuator", "health", "liveness" ]
+        }
+      }
+    } ]
+  }, {
+    "name" : "Accounts",
+    "item" : [ {
+      "name" : "List customer accounts",
+      "request" : {
+        "method" : "GET",
+        "header" : [ {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/accounts",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "accounts" ]
+        }
+      }
+    }, {
+      "name" : "Create a new account",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/accounts",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "accounts" ]
+        },
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"accountType\" : \"accountType\",\n  \"currency\" : \"currency\",\n  \"customerName\" : \"customerName\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        }
+      }
+    }, {
+      "name" : "Get account details",
+      "request" : {
+        "method" : "GET",
+        "header" : [ {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/accounts/{{accountId}}",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "accounts", "{{accountId}}" ]
+        }
+      }
+    } ]
+  }, {
+    "name" : "Transactions",
+    "item" : [ {
+      "name" : "List transactions",
+      "request" : {
+        "method" : "GET",
+        "header" : [ {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/transactions?accountId={{resourceId}}&startDate=2026-01-01&endDate=2026-01-01",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "transactions" ],
+          "query" : [ {
+            "key" : "accountId",
+            "value" : "{{resourceId}}"
+          }, {
+            "key" : "startDate",
+            "value" : "2026-01-01"
+          }, {
+            "key" : "endDate",
+            "value" : "2026-01-01"
+          } ]
+        }
+      }
+    }, {
+      "name" : "Create transaction",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/transactions",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "transactions" ]
+        },
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"transactionType\" : \"transactionType\",\n  \"accountId\" : \"accountId\",\n  \"amount\" : 0.8008281904610115,\n  \"description\" : \"description\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        }
+      }
+    } ]
+  }, {
+    "name" : "Payments",
+    "item" : [ {
+      "name" : "Initiate payment",
+      "request" : {
+        "method" : "POST",
+        "header" : [ {
+          "key" : "Content-Type",
+          "value" : "application/json"
+        }, {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/payments",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "payments" ]
+        },
+        "body" : {
+          "mode" : "raw",
+          "raw" : "{\n  \"amount\" : 0.8008281904610115,\n  \"sourceAccount\" : \"sourceAccount\",\n  \"currency\" : \"USD\",\n  \"destinationAccount\" : \"destinationAccount\"\n}",
+          "options" : {
+            "raw" : {
+              "language" : "json"
+            }
+          }
+        }
+      }
+    } ]
+  }, {
+    "name" : "Reports",
+    "item" : [ {
+      "name" : "Generate balance sheet report",
+      "request" : {
+        "method" : "GET",
+        "header" : [ {
+          "key" : "Accept",
+          "value" : "application/json"
+        } ],
+        "url" : {
+          "raw" : "{{baseUrl}}/reports/balance-sheet?fiscalYear=1",
+          "host" : [ "{{baseUrl}}" ],
+          "path" : [ "reports", "balance-sheet" ],
+          "query" : [ {
+            "key" : "fiscalYear",
+            "value" : 1
+          } ]
+        }
+      }
+    } ]
+  } ]
+}
