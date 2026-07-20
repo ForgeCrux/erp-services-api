@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.constraints.*;
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,8 +19,9 @@ import jakarta.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.probestack.forgestudio.design.service.AccountsService;
+import com.probestack.forgestudio.design.validation.GeneratedRequestValidator;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-05-13T10:04:10.160096639Z[GMT]")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-20T08:01:51.014269893Z[GMT]")
 @Controller
 @RequestMapping("${openapi.eRPServices.base-path:/v1}")
 public class AccountsApiController implements AccountsApi {
@@ -30,15 +30,19 @@ public class AccountsApiController implements AccountsApi {
 
     private final AccountsService accountsService;
 
+    private final GeneratedRequestValidator generatedRequestValidator;
+
     @Autowired()
-    public AccountsApiController(AccountsService accountsService) {
+    public AccountsApiController(AccountsService accountsService, GeneratedRequestValidator generatedRequestValidator) {
         this.accountsService = accountsService;
+        this.generatedRequestValidator = generatedRequestValidator;
     }
 
     @Override()
-    public ResponseEntity<Account> createAccount(@Valid() @RequestBody() CreateAccountRequest createAccountRequest) {
+    public ResponseEntity<Account> createAccount(@RequestBody() CreateAccountRequest createAccountRequest) {
         log.info("Processing createAccount request");
         try {
+            generatedRequestValidator.validate("createAccount", createAccountRequest);
             var response = accountsService.createAccount(createAccountRequest);
             log.info("createAccount completed successfully");
             return ResponseEntity.status(HttpStatus.CREATED).body(response.getBody());

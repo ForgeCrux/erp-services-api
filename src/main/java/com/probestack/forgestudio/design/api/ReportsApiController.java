@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.constraints.*;
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,8 +18,9 @@ import jakarta.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.probestack.forgestudio.design.service.ReportsService;
+import com.probestack.forgestudio.design.validation.GeneratedRequestValidator;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-05-13T10:04:10.160096639Z[GMT]")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-20T08:01:51.014269893Z[GMT]")
 @Controller
 @RequestMapping("${openapi.eRPServices.base-path:/v1}")
 public class ReportsApiController implements ReportsApi {
@@ -29,13 +29,16 @@ public class ReportsApiController implements ReportsApi {
 
     private final ReportsService reportsService;
 
+    private final GeneratedRequestValidator generatedRequestValidator;
+
     @Autowired()
-    public ReportsApiController(ReportsService reportsService) {
+    public ReportsApiController(ReportsService reportsService, GeneratedRequestValidator generatedRequestValidator) {
         this.reportsService = reportsService;
+        this.generatedRequestValidator = generatedRequestValidator;
     }
 
     @Override()
-    public ResponseEntity<BalanceSheet> getBalanceSheet(@Valid() @RequestBody() @RequestParam() Integer fiscalYear) {
+    public ResponseEntity<BalanceSheet> getBalanceSheet(@RequestParam() Integer fiscalYear) {
         log.info("Processing getBalanceSheet request");
         try {
             var response = reportsService.getBalanceSheet(fiscalYear);

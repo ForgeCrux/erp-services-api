@@ -1,0 +1,7 @@
+{
+  "artifactId" : "erp-services-api",
+  "status" : "SKIPPED",
+  "message" : "mockOptions.microserviceId and mockOptions.userEmail are required",
+  "endpointCount" : 0,
+  "generatedAt" : "2026-07-20T08:01:53.037708581Z"
+}

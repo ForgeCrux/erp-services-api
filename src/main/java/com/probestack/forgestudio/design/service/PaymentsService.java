@@ -1,12 +1,20 @@
 package com.probestack.forgestudio.design.service;
 
+import com.probestack.forgestudio.design.logging.BusinessOperationEvent;
+import com.probestack.forgestudio.design.logging.BusinessOperationLogger;
 import com.probestack.forgestudio.design.model.PaymentRequest;
 import com.probestack.forgestudio.design.model.PaymentResponse;
 import com.probestack.forgestudio.design.repository.PaymentRequestRepository;
+import java.lang.Class;
 import java.lang.Exception;
+import java.lang.Long;
 import java.lang.Object;
+import java.lang.RuntimeException;
 import java.lang.String;
+import java.lang.System;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
@@ -25,17 +33,48 @@ import org.springframework.stereotype.Service;
 public class PaymentsService {
     private final PaymentRequestRepository paymentRequestRepository;
 
-    public PaymentsService(PaymentRequestRepository paymentRequestRepository) {
+    private final BusinessOperationLogger businessOperationLogger;
+
+    public PaymentsService(PaymentRequestRepository paymentRequestRepository,
+            BusinessOperationLogger businessOperationLogger) {
         this.paymentRequestRepository = paymentRequestRepository;
+        this.businessOperationLogger = businessOperationLogger;
     }
 
     public ResponseEntity<PaymentResponse> createPayment(PaymentRequest paymentRequest) {
-        // Save the entity to database
-        ensureEntityId(paymentRequest);
-        PaymentRequest savedPaymentRequest = paymentRequestRepository.save(paymentRequest);
-        // Map entity to response DTO
-        PaymentResponse response = mapToPaymentResponse(savedPaymentRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        long businessStartedAt = System.nanoTime();
+        try {
+            // Save the entity to database
+            ensureEntityId(paymentRequest);
+            PaymentRequest savedPaymentRequest = paymentRequestRepository.save(paymentRequest);
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("createPayment")
+                            .resource("PaymentRequest")
+                            .action("CREATE")
+                            .status("SUCCESS")
+                            .repository("PaymentRequestRepository")
+                            .collection("erp_services_api_payments")
+                            .documentId(getEntityId(savedPaymentRequest))
+                            .recordCount(1)
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .build());
+            // Map entity to response DTO
+            PaymentResponse response = mapToPaymentResponse(savedPaymentRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException exception) {
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("createPayment")
+                            .resource("PaymentRequest")
+                            .action("CREATE")
+                            .status("FAILED")
+                            .repository("PaymentRequestRepository")
+                            .collection("erp_services_api_payments")
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .errorCode("database_write_failed")
+                            .errorMessage(exception.getMessage())
+                            .build(), exception);
+            throw exception;
+        }
     }
 
     /**
@@ -106,6 +145,30 @@ public class PaymentsService {
                 }
             }
         }
+    }
+
+    /**
+     * Creates an empty response wrapper for list/search endpoints.
+     */
+    private <T> T emptyResponse(Class<T> responseType) {
+        try {
+            T response = responseType.getDeclaredConstructor().newInstance();
+            for (Method method : responseType.getMethods()) {
+                if (method.getName().startsWith("set") && method.getParameterCount() == 1 && List.class.isAssignableFrom(method.getParameterTypes()[0])) {
+                    method.invoke(response, Collections.emptyList());
+                }
+            }
+            return response;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Calculates elapsed milliseconds for generated business operation logs.
+     */
+    private Long businessDurationMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000L;
     }
 
     /**

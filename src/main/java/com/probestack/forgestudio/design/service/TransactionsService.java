@@ -1,13 +1,20 @@
 package com.probestack.forgestudio.design.service;
 
+import com.probestack.forgestudio.design.logging.BusinessOperationEvent;
+import com.probestack.forgestudio.design.logging.BusinessOperationLogger;
 import com.probestack.forgestudio.design.model.CreateTransactionRequest;
 import com.probestack.forgestudio.design.model.Transaction;
 import com.probestack.forgestudio.design.repository.CreateTransactionRequestRepository;
+import java.lang.Class;
 import java.lang.Exception;
+import java.lang.Long;
 import java.lang.Object;
+import java.lang.RuntimeException;
 import java.lang.String;
+import java.lang.System;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -28,28 +35,85 @@ import org.springframework.stereotype.Service;
 public class TransactionsService {
     private final CreateTransactionRequestRepository createTransactionRequestRepository;
 
+    private final BusinessOperationLogger businessOperationLogger;
+
     public TransactionsService(
-            CreateTransactionRequestRepository createTransactionRequestRepository) {
+            CreateTransactionRequestRepository createTransactionRequestRepository,
+            BusinessOperationLogger businessOperationLogger) {
         this.createTransactionRequestRepository = createTransactionRequestRepository;
+        this.businessOperationLogger = businessOperationLogger;
     }
 
     public ResponseEntity<Transaction> createTransaction(
             CreateTransactionRequest createTransactionRequest) {
-        // Save the entity to database
-        ensureEntityId(createTransactionRequest);
-        CreateTransactionRequest savedCreateTransactionRequest = createTransactionRequestRepository.save(createTransactionRequest);
-        // Map entity to response DTO
-        Transaction response = mapToTransaction(savedCreateTransactionRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        long businessStartedAt = System.nanoTime();
+        try {
+            // Save the entity to database
+            ensureEntityId(createTransactionRequest);
+            CreateTransactionRequest savedCreateTransactionRequest = createTransactionRequestRepository.save(createTransactionRequest);
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("createTransaction")
+                            .resource("CreateTransactionRequest")
+                            .action("CREATE")
+                            .status("SUCCESS")
+                            .repository("CreateTransactionRequestRepository")
+                            .collection("erp_services_api_transactions")
+                            .documentId(getEntityId(savedCreateTransactionRequest))
+                            .recordCount(1)
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .build());
+            // Map entity to response DTO
+            Transaction response = mapToTransaction(savedCreateTransactionRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException exception) {
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("createTransaction")
+                            .resource("CreateTransactionRequest")
+                            .action("CREATE")
+                            .status("FAILED")
+                            .repository("CreateTransactionRequestRepository")
+                            .collection("erp_services_api_transactions")
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .errorCode("database_write_failed")
+                            .errorMessage(exception.getMessage())
+                            .build(), exception);
+            throw exception;
+        }
     }
 
     public ResponseEntity<List<Transaction>> listTransactions(String accountId, LocalDate startDate,
             LocalDate endDate) {
-        // Retrieve all entities from database
-        List<CreateTransactionRequest> entities = createTransactionRequestRepository.findAll();
-        // Map entities to response DTOs
-        List<Transaction> responses = entities.stream().map(this::mapToTransaction).collect(Collectors.toList());
-        return ResponseEntity.ok(responses);
+        long businessStartedAt = System.nanoTime();
+        try {
+            // Retrieve all entities from database
+            List<CreateTransactionRequest> entities = createTransactionRequestRepository.findAll();
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("listTransactions")
+                            .resource("CreateTransactionRequest")
+                            .action("READ")
+                            .status("SUCCESS")
+                            .repository("CreateTransactionRequestRepository")
+                            .collection("erp_services_api_transactions")
+                            .recordCount(entities.size())
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .build());
+            // Map entities to response DTOs
+            List<Transaction> responses = entities.stream().map(this::mapToTransaction).collect(Collectors.toList());
+            return ResponseEntity.ok(responses);
+        } catch (RuntimeException exception) {
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("listTransactions")
+                            .resource("CreateTransactionRequest")
+                            .action("READ")
+                            .status("FAILED")
+                            .repository("CreateTransactionRequestRepository")
+                            .collection("erp_services_api_transactions")
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .errorCode("database_read_failed")
+                            .errorMessage(exception.getMessage())
+                            .build(), exception);
+            throw exception;
+        }
     }
 
     /**
@@ -120,6 +184,30 @@ public class TransactionsService {
                 }
             }
         }
+    }
+
+    /**
+     * Creates an empty response wrapper for list/search endpoints.
+     */
+    private <T> T emptyResponse(Class<T> responseType) {
+        try {
+            T response = responseType.getDeclaredConstructor().newInstance();
+            for (Method method : responseType.getMethods()) {
+                if (method.getName().startsWith("set") && method.getParameterCount() == 1 && List.class.isAssignableFrom(method.getParameterTypes()[0])) {
+                    method.invoke(response, Collections.emptyList());
+                }
+            }
+            return response;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Calculates elapsed milliseconds for generated business operation logs.
+     */
+    private Long businessDurationMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000L;
     }
 
     /**

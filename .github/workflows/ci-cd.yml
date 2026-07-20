@@ -16,7 +16,7 @@ env:
   REGION: us-central1
   ARTIFACT_REGISTRY_HOST: us-central1-docker.pkg.dev
   ARTIFACT_REGISTRY_REPOSITORY: probestack-prod/probestack-prod-apps
-  JAVA_VERSION: '17'
+  JAVA_VERSION: '21'
 
 jobs:
   build-and-test:

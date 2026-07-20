@@ -1,0 +1,362 @@
+openapi: 3.0.3
+info:
+  contact:
+    email: support@example.com
+    name: ERP API Team
+  description: API specification for ERP resource planning and management.
+  title: ERP Services API
+  version: 1.0.0
+servers:
+- description: Production
+  url: https://api.example.com/v1
+- description: Sandbox
+  url: https://sandbox.example.com/v1
+security:
+- bearerAuth: []
+tags:
+- name: Accounts
+- name: Transactions
+- name: Payments
+- name: Reports
+paths:
+  /accounts:
+    get:
+      operationId: listAccounts
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Account"
+                type: array
+          description: Successful response
+      summary: List customer accounts
+      tags:
+      - Accounts
+      x-accepts: application/json
+      x-tags:
+      - tag: Accounts
+    post:
+      operationId: createAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+          description: Account created
+      summary: Create a new account
+      tags:
+      - Accounts
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: Accounts
+  /accounts/{accountId}:
+    get:
+      operationId: getAccount
+      parameters:
+      - explode: false
+        in: path
+        name: accountId
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+          description: Account details
+      summary: Get account details
+      tags:
+      - Accounts
+      x-accepts: application/json
+      x-tags:
+      - tag: Accounts
+  /transactions:
+    get:
+      operationId: listTransactions
+      parameters:
+      - explode: true
+        in: query
+        name: accountId
+        required: false
+        schema:
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: startDate
+        required: false
+        schema:
+          format: date
+          type: string
+        style: form
+      - explode: true
+        in: query
+        name: endDate
+        required: false
+        schema:
+          format: date
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Transaction"
+                type: array
+          description: Transaction list
+      summary: List transactions
+      tags:
+      - Transactions
+      x-accepts: application/json
+      x-tags:
+      - tag: Transactions
+    post:
+      operationId: createTransaction
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransactionRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+          description: Transaction created
+      summary: Create transaction
+      tags:
+      - Transactions
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: Transactions
+  /payments:
+    post:
+      operationId: createPayment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+          description: Payment processed
+      summary: Initiate payment
+      tags:
+      - Payments
+      x-content-type: application/json
+      x-accepts: application/json
+      x-tags:
+      - tag: Payments
+  /reports/balance-sheet:
+    get:
+      operationId: getBalanceSheet
+      parameters:
+      - explode: true
+        in: query
+        name: fiscalYear
+        required: true
+        schema:
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BalanceSheet"
+          description: Balance sheet report
+      summary: Generate balance sheet report
+      tags:
+      - Reports
+      x-accepts: application/json
+      x-tags:
+      - tag: Reports
+components:
+  schemas:
+    Account:
+      example:
+        createdAt: 2000-01-23T04:56:07.000+00:00
+        balance: 15420.75
+        accountType: SAVINGS
+        currency: USD
+        id: ACC123456
+        customerName: John Doe
+      properties:
+        id:
+          example: ACC123456
+          type: string
+        customerName:
+          example: John Doe
+          type: string
+        accountType:
+          enum:
+          - SAVINGS
+          - CHECKING
+          - CREDIT
+          type: string
+        currency:
+          example: USD
+          type: string
+        balance:
+          example: 15420.75
+          format: double
+          type: number
+        createdAt:
+          format: date-time
+          type: string
+      type: object
+    CreateAccountRequest:
+      example:
+        accountType: accountType
+        currency: currency
+        customerName: customerName
+      properties:
+        customerName:
+          type: string
+        accountType:
+          type: string
+        currency:
+          type: string
+      required:
+      - accountType
+      - currency
+      - customerName
+      type: object
+    Transaction:
+      example:
+        transactionType: DEBIT
+        accountId: accountId
+        amount: 0.8008281904610115
+        description: description
+        currency: currency
+        transactionDate: 2000-01-23T04:56:07.000+00:00
+        transactionId: transactionId
+      properties:
+        transactionId:
+          type: string
+        accountId:
+          type: string
+        amount:
+          format: double
+          type: number
+        currency:
+          type: string
+        transactionType:
+          enum:
+          - DEBIT
+          - CREDIT
+          type: string
+        description:
+          type: string
+        transactionDate:
+          format: date-time
+          type: string
+      type: object
+    CreateTransactionRequest:
+      example:
+        transactionType: transactionType
+        accountId: accountId
+        amount: 0.8008281904610115
+        description: description
+      properties:
+        accountId:
+          type: string
+        amount:
+          format: double
+          type: number
+        transactionType:
+          type: string
+        description:
+          type: string
+      required:
+      - accountId
+      - amount
+      - transactionType
+      type: object
+    PaymentRequest:
+      example:
+        amount: 0.8008281904610115
+        sourceAccount: sourceAccount
+        currency: USD
+        destinationAccount: destinationAccount
+      properties:
+        sourceAccount:
+          type: string
+        destinationAccount:
+          type: string
+        amount:
+          format: double
+          type: number
+        currency:
+          example: USD
+          type: string
+      required:
+      - amount
+      - destinationAccount
+      - sourceAccount
+      type: object
+    PaymentResponse:
+      example:
+        paymentId: paymentId
+        processedAt: 2000-01-23T04:56:07.000+00:00
+        status: PENDING
+      properties:
+        paymentId:
+          type: string
+        status:
+          enum:
+          - PENDING
+          - COMPLETED
+          - FAILED
+          type: string
+        processedAt:
+          format: date-time
+          type: string
+      type: object
+    BalanceSheet:
+      example:
+        assets: 6.027456183070403
+        liabilities: 1.4658129805029452
+        fiscalYear: 0
+        equity: 5.962133916683182
+      properties:
+        fiscalYear:
+          type: integer
+        assets:
+          format: double
+          type: number
+        liabilities:
+          format: double
+          type: number
+        equity:
+          format: double
+          type: number
+      type: object
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

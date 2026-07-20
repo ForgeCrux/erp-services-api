@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.constraints.*;
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,8 +19,9 @@ import jakarta.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.probestack.forgestudio.design.service.PaymentsService;
+import com.probestack.forgestudio.design.validation.GeneratedRequestValidator;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-05-13T10:04:10.160096639Z[GMT]")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-20T08:01:51.014269893Z[GMT]")
 @Controller
 @RequestMapping("${openapi.eRPServices.base-path:/v1}")
 public class PaymentsApiController implements PaymentsApi {
@@ -30,15 +30,19 @@ public class PaymentsApiController implements PaymentsApi {
 
     private final PaymentsService paymentsService;
 
+    private final GeneratedRequestValidator generatedRequestValidator;
+
     @Autowired()
-    public PaymentsApiController(PaymentsService paymentsService) {
+    public PaymentsApiController(PaymentsService paymentsService, GeneratedRequestValidator generatedRequestValidator) {
         this.paymentsService = paymentsService;
+        this.generatedRequestValidator = generatedRequestValidator;
     }
 
     @Override()
-    public ResponseEntity<PaymentResponse> createPayment(@Valid() @RequestBody() PaymentRequest paymentRequest) {
+    public ResponseEntity<PaymentResponse> createPayment(@RequestBody() PaymentRequest paymentRequest) {
         log.info("Processing createPayment request");
         try {
+            generatedRequestValidator.validate("createPayment", paymentRequest);
             var response = paymentsService.createPayment(paymentRequest);
             log.info("createPayment completed successfully");
             return ResponseEntity.status(HttpStatus.CREATED).body(response.getBody());

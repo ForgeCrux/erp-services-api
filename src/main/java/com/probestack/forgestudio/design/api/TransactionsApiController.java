@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.validation.constraints.*;
-import jakarta.validation.Valid;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,8 +21,9 @@ import jakarta.annotation.Generated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.probestack.forgestudio.design.service.TransactionsService;
+import com.probestack.forgestudio.design.validation.GeneratedRequestValidator;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-05-13T10:04:10.160096639Z[GMT]")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-20T08:01:51.014269893Z[GMT]")
 @Controller
 @RequestMapping("${openapi.eRPServices.base-path:/v1}")
 public class TransactionsApiController implements TransactionsApi {
@@ -32,15 +32,19 @@ public class TransactionsApiController implements TransactionsApi {
 
     private final TransactionsService transactionsService;
 
+    private final GeneratedRequestValidator generatedRequestValidator;
+
     @Autowired()
-    public TransactionsApiController(TransactionsService transactionsService) {
+    public TransactionsApiController(TransactionsService transactionsService, GeneratedRequestValidator generatedRequestValidator) {
         this.transactionsService = transactionsService;
+        this.generatedRequestValidator = generatedRequestValidator;
     }
 
     @Override()
-    public ResponseEntity<Transaction> createTransaction(@Valid() @RequestBody() CreateTransactionRequest createTransactionRequest) {
+    public ResponseEntity<Transaction> createTransaction(@RequestBody() CreateTransactionRequest createTransactionRequest) {
         log.info("Processing createTransaction request");
         try {
+            generatedRequestValidator.validate("createTransaction", createTransactionRequest);
             var response = transactionsService.createTransaction(createTransactionRequest);
             log.info("createTransaction completed successfully");
             return ResponseEntity.status(HttpStatus.CREATED).body(response.getBody());
@@ -51,7 +55,7 @@ public class TransactionsApiController implements TransactionsApi {
     }
 
     @Override()
-    public ResponseEntity<List<Transaction>> listTransactions(@Valid() @RequestBody() @RequestParam() String accountId, @Valid() @RequestBody() @RequestParam() LocalDate startDate, @Valid() @RequestBody() @RequestParam() LocalDate endDate) {
+    public ResponseEntity<List<Transaction>> listTransactions(@RequestParam() String accountId, @RequestParam() LocalDate startDate, @RequestParam() LocalDate endDate) {
         log.info("Processing listTransactions request");
         try {
             var response = transactionsService.listTransactions(accountId, startDate, endDate);

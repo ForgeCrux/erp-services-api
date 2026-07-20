@@ -1,12 +1,20 @@
 package com.probestack.forgestudio.design.service;
 
+import com.probestack.forgestudio.design.exception.ApiException;
+import com.probestack.forgestudio.design.logging.BusinessOperationEvent;
+import com.probestack.forgestudio.design.logging.BusinessOperationLogger;
 import com.probestack.forgestudio.design.model.Account;
 import com.probestack.forgestudio.design.model.CreateAccountRequest;
 import com.probestack.forgestudio.design.repository.CreateAccountRequestRepository;
+import java.lang.Class;
 import java.lang.Exception;
+import java.lang.Long;
 import java.lang.Object;
+import java.lang.RuntimeException;
 import java.lang.String;
+import java.lang.System;
 import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,33 +36,117 @@ import org.springframework.stereotype.Service;
 public class AccountsService {
     private final CreateAccountRequestRepository createAccountRequestRepository;
 
-    public AccountsService(CreateAccountRequestRepository createAccountRequestRepository) {
+    private final BusinessOperationLogger businessOperationLogger;
+
+    public AccountsService(CreateAccountRequestRepository createAccountRequestRepository,
+            BusinessOperationLogger businessOperationLogger) {
         this.createAccountRequestRepository = createAccountRequestRepository;
+        this.businessOperationLogger = businessOperationLogger;
     }
 
     public ResponseEntity<Account> createAccount(CreateAccountRequest createAccountRequest) {
-        // Save the entity to database
-        ensureEntityId(createAccountRequest);
-        CreateAccountRequest savedCreateAccountRequest = createAccountRequestRepository.save(createAccountRequest);
-        // Map entity to response DTO
-        Account response = mapToAccount(savedCreateAccountRequest);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        long businessStartedAt = System.nanoTime();
+        try {
+            // Save the entity to database
+            ensureEntityId(createAccountRequest);
+            CreateAccountRequest savedCreateAccountRequest = createAccountRequestRepository.save(createAccountRequest);
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("createAccount")
+                            .resource("CreateAccountRequest")
+                            .action("CREATE")
+                            .status("SUCCESS")
+                            .repository("CreateAccountRequestRepository")
+                            .collection("erp_services_api_accounts")
+                            .documentId(getEntityId(savedCreateAccountRequest))
+                            .recordCount(1)
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .build());
+            // Map entity to response DTO
+            Account response = mapToAccount(savedCreateAccountRequest);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (RuntimeException exception) {
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("createAccount")
+                            .resource("CreateAccountRequest")
+                            .action("CREATE")
+                            .status("FAILED")
+                            .repository("CreateAccountRequestRepository")
+                            .collection("erp_services_api_accounts")
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .errorCode("database_write_failed")
+                            .errorMessage(exception.getMessage())
+                            .build(), exception);
+            throw exception;
+        }
     }
 
     public ResponseEntity<Account> getAccount(String accountId) {
-        // Retrieve entity by ID from database
-        String repositoryId = toRepositoryId(accountId);
-        Optional<CreateAccountRequest> entity = createAccountRequestRepository.findById(repositoryId);
-        // Map entity to response DTO
-        return entity.map(this::mapToAccount).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        long businessStartedAt = System.nanoTime();
+        try {
+            // Retrieve entity by ID from database
+            String repositoryId = toRepositoryId(accountId);
+            Optional<CreateAccountRequest> entity = createAccountRequestRepository.findById(repositoryId);
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("getAccount")
+                            .resource("CreateAccountRequest")
+                            .action("READ")
+                            .status("SUCCESS")
+                            .repository("CreateAccountRequestRepository")
+                            .collection("erp_services_api_accounts")
+                            .documentId(repositoryId)
+                            .recordCount(entity.isPresent() ? 1 : 0)
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .build());
+            // Map entity to response DTO
+            return entity.map(this::mapToAccount).map(ResponseEntity::ok).orElseThrow(() -> ApiException.notFound("CreateAccountRequest", repositoryId));
+        } catch (RuntimeException exception) {
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("getAccount")
+                            .resource("CreateAccountRequest")
+                            .action("READ")
+                            .status("FAILED")
+                            .repository("CreateAccountRequestRepository")
+                            .collection("erp_services_api_accounts")
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .errorCode("database_read_failed")
+                            .errorMessage(exception.getMessage())
+                            .build(), exception);
+            throw exception;
+        }
     }
 
     public ResponseEntity<List<Account>> listAccounts() {
-        // Retrieve all entities from database
-        List<CreateAccountRequest> entities = createAccountRequestRepository.findAll();
-        // Map entities to response DTOs
-        List<Account> responses = entities.stream().map(this::mapToAccount).collect(Collectors.toList());
-        return ResponseEntity.ok(responses);
+        long businessStartedAt = System.nanoTime();
+        try {
+            // Retrieve all entities from database
+            List<CreateAccountRequest> entities = createAccountRequestRepository.findAll();
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("listAccounts")
+                            .resource("CreateAccountRequest")
+                            .action("READ")
+                            .status("SUCCESS")
+                            .repository("CreateAccountRequestRepository")
+                            .collection("erp_services_api_accounts")
+                            .recordCount(entities.size())
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .build());
+            // Map entities to response DTOs
+            List<Account> responses = entities.stream().map(this::mapToAccount).collect(Collectors.toList());
+            return ResponseEntity.ok(responses);
+        } catch (RuntimeException exception) {
+            businessOperationLogger.record(BusinessOperationEvent.builder()
+                            .operation("listAccounts")
+                            .resource("CreateAccountRequest")
+                            .action("READ")
+                            .status("FAILED")
+                            .repository("CreateAccountRequestRepository")
+                            .collection("erp_services_api_accounts")
+                            .durationMs(businessDurationMs(businessStartedAt))
+                            .errorCode("database_read_failed")
+                            .errorMessage(exception.getMessage())
+                            .build(), exception);
+            throw exception;
+        }
     }
 
     /**
@@ -125,6 +217,30 @@ public class AccountsService {
                 }
             }
         }
+    }
+
+    /**
+     * Creates an empty response wrapper for list/search endpoints.
+     */
+    private <T> T emptyResponse(Class<T> responseType) {
+        try {
+            T response = responseType.getDeclaredConstructor().newInstance();
+            for (Method method : responseType.getMethods()) {
+                if (method.getName().startsWith("set") && method.getParameterCount() == 1 && List.class.isAssignableFrom(method.getParameterTypes()[0])) {
+                    method.invoke(response, Collections.emptyList());
+                }
+            }
+            return response;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    /**
+     * Calculates elapsed milliseconds for generated business operation logs.
+     */
+    private Long businessDurationMs(long startedAt) {
+        return (System.nanoTime() - startedAt) / 1_000_000L;
     }
 
     /**
