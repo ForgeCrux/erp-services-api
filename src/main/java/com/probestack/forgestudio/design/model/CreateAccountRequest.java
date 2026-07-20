@@ -17,7 +17,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 /**
  * CreateAccountRequest
  */
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-20T08:01:51.014269893Z[GMT]")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-20T08:54:29.402912306Z[GMT]")
 @Document(collection = "erp_services_api_accounts")
 public class CreateAccountRequest {
 
