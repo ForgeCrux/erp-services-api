@@ -17,7 +17,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 /**
  * CreateTransactionRequest
  */
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-20T08:54:29.402912306Z[GMT]")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-20T16:42:10.148583911Z[GMT]")
 @Document(collection = "erp_services_api_transactions")
 public class CreateTransactionRequest {
 
