@@ -17,7 +17,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 /**
  * BalanceSheet
  */
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-23T02:57:18.537920193Z[GMT]")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-23T09:02:07.306969492Z[GMT]")
 @Document(collection = "erp_services_api_reports")
 public class BalanceSheet {
 

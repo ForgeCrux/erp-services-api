@@ -21,7 +21,7 @@ import org.slf4j.LoggerFactory;
 import com.probestack.forgestudio.design.service.AccountsService;
 import com.probestack.forgestudio.design.validation.GeneratedRequestValidator;
 
-@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-23T02:57:18.537920193Z[GMT]")
+@Generated(value = "org.openapitools.codegen.languages.SpringCodegen", date = "2026-07-23T09:02:07.306969492Z[GMT]")
 @Controller
 @RequestMapping("${openapi.eRPServices.base-path:/v1}")
 public class AccountsApiController implements AccountsApi {
